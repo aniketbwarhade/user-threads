@@ -3,6 +3,9 @@
     "thread.h": "c",
     "cstdlib": "c",
     "stdlib.h": "c",
-    "signal.h": "c"
+    "signal.h": "c",
+    "unistd.h": "c",
+    "sched.h": "c",
+    "errno.h": "c"
   }
 }
