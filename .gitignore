@@ -1,0 +1,2 @@
+# Ignore all files named .DS_Store or ending with .out
+**.out
