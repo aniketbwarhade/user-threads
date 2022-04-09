@@ -6,6 +6,9 @@
     "signal.h": "c",
     "unistd.h": "c",
     "sched.h": "c",
-    "errno.h": "c"
+    "errno.h": "c",
+    "*.tcc": "c",
+    "memory": "c",
+    "new": "c"
   }
 }
