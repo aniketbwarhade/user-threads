@@ -5,7 +5,6 @@ typedef unsigned long thread_t;
 typedef struct tcb
 {
     thread_t thread_id;
-    thread_t pid;
     void *stack;
     void *args;
     int state;
@@ -20,7 +19,8 @@ enum
     THREAD_RUNNING,
     THREAD_READY,
     THREAD_BLOCKED,
-    THREAD_DEAD
+    THREAD_DEAD,
+    THREAD_EXITED
 };
 
 typedef struct thread_attr_t

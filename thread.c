@@ -11,6 +11,7 @@
 #include <syscall.h>
 #include "list.h"
 
+// Return thread_t of calling thread
 thread_t get_self_thread_id(void)
 {
     thread_t self_tid;
@@ -18,6 +19,7 @@ thread_t get_self_thread_id(void)
     return self_tid;
 }
 
+// First function to be called in the main application program. which creates the main thread.
 int add_main_thread(void)
 {
     tcb *main;
@@ -36,6 +38,14 @@ int add_main_thread(void)
     main->thread_id = get_self_thread_id();
 
     addthread_l(main);
+    return 0;
+}
+
+int function_start(void *thread)
+{
+    tcb *t = (tcb *)thread;
+    t->return_val = t->start_func(t->args);
+    t->state = THREAD_EXITED;
     return 0;
 }
 
@@ -84,10 +94,7 @@ int create_new_thread(thread_t *t, thread_attr_t *attr, void *(*start_func)(void
     child_thread->args = args;
     child_thread->state = THREAD_RUNNING;
     child_thread->start_func = start_func;
-    child_thread->args = args;
-    child_thread->return_val = NULL;
-    int (*func)(void *) = (int (*)(void *))start_func; // typecast (void *)(*start_func) to int (*func)
-    tid = clone(func, stack_top, CLONE_VM | SIGCHLD, NULL);
+    tid = clone(&function_start, stack_top, CLONE_VM | SIGCHLD, child_thread);
     if (tid == EINVAL || tid == ENOMEM)
     {
         printf("Stack problem");
@@ -99,26 +106,14 @@ int create_new_thread(thread_t *t, thread_attr_t *attr, void *(*start_func)(void
         return errno;
     }
     child_thread->thread_id = tid;
-    child_thread->pid = getpid();
+    // Add created thread_struct to list of thread blocks
     addthread_l(child_thread);
 
-    printf("\nParent_id : %lu \n", child_thread->pid);
+    printf("\nParent_id : %d \n", getpid());
     printf("\nChild_tid : %lu \n", child_thread->thread_id);
-    // wait(NULL);
     free(thread_child_stack);
-    // Add created thread_struct to list of thread blocks
-
     (*t) = tid;
     return 0;
-}
-
-/* Return thread_t of calling thread
- */
-
-// Schedule next ready thread
-
-void t_scheduler(void)
-{
 }
 
 int join_thread(thread_t thread, void **retval)
@@ -134,20 +129,15 @@ int join_thread(thread_t thread, void **retval)
         return 0;
     }
 
-    /* If the thread is not dead and someone else is already waiting on it
-     * return an error
-     */
+    // If the thread is not dead and someone else is already waiting on it return an error
+
     if (called_thread->blocked_join != NULL)
         return -1;
 
     called_thread->blocked_join = calling_thread;
-    printf("Join: Setting state of %ld to %d\n", (unsigned long)called_thread->thread_id, THREAD_BLOCKED);
     calling_thread->state = THREAD_BLOCKED;
 
-    //  Schedule another thread
-    // thread_sched();
-
-    t = waitpid(thread, NULL, 0);
+    t = waitpid(thread, NULL, 0 | WNOHANG);
 
     if (t == -1)
         perror("thread has exited\n");

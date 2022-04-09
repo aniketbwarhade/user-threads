@@ -5,10 +5,9 @@
 
 void *func(void *arg)
 {
-    printf("Child pid : %d     { from getpid() }\n", getpid());
-    printf("\n I am Child process.\n");
-    printf("%d", 3 + 5);
-    return NULL;
+    int *temp = (int *)arg;
+    printf("\nFunction Value: %d\n", *temp);
+    return (void *)temp;
 }
 
 int main()
@@ -16,16 +15,11 @@ int main()
     init_thread_l();
     add_main_thread();
     thread_t tid, pid;
-    int *status1 = NULL, *status2 = NULL;
-
-    printf("in test1\n");
-
-    create_new_thread(&tid, NULL, &func, NULL);
-    // create_new_thread(&pid, NULL, &func, NULL);
-
+    int *status1 = NULL;
+    int i = 11;
+    int *temp = &i;
+    create_new_thread(&tid, NULL, &func, (void *)temp);
     join_thread(tid, (void **)&status1);
-    // join_thread(pid, (void **)&status2);
-
-    printf("%d %d\n", *status1, *status2);
+    printf("%d\n", *status1);
     return 0;
 }
