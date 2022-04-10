@@ -146,3 +146,14 @@ int join_thread(thread_t thread, void **retval)
     *retval = called_thread->return_val;
     return 0;
 }
+
+void exit_thread(void *ret_val)
+{
+    tcb *curr_thread;
+    curr_thread = getthread_l(get_self_thread_id());
+    curr_thread->return_val = ret_val;
+    if (curr_thread->blocked_join != NULL)
+        curr_thread->blocked_join->state = THREAD_READY;
+    curr_thread->state = THREAD_DEAD;
+    syscall(SYS_exit, 0);
+}
