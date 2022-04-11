@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "list.h"
+#include "doublyll.h"
 
 void init_thread_l()
 {
@@ -14,6 +14,8 @@ void addthread_l(tcb *thread)
     node *temp = (node *)malloc(sizeof(node));
     temp->thread = thread;
     temp->next = NULL;
+    temp->prev = NULL;
+
     if (thread_list->head == NULL && thread_list->tail == NULL)
     {
         thread_list->head = thread_list->tail = temp;

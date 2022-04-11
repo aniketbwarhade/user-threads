@@ -9,13 +9,13 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <syscall.h>
-#include "list.h"
+#include "doublyll.h"
 
 // Return thread_t of calling thread
 thread_t get_self_thread_id(void)
 {
     thread_t self_tid;
-    self_tid = (pid_t)syscall(SYS_gettid);
+    self_tid = gettid();
     return self_tid;
 }
 
@@ -95,10 +95,6 @@ int create_new_thread(thread_t *t, thread_attr_t *attr, void *(*start_func)(void
     child_thread->state = THREAD_RUNNING;
     child_thread->start_func = start_func;
     tid = clone(&function_start, stack_top, CLONE_VM | SIGCHLD, child_thread);
-    if (tid == EINVAL || tid == ENOMEM)
-    {
-        printf("Stack problem");
-    }
     if (tid < 0)
     {
         printf("ERROR: Clone failed unable to create the child process.\n");
@@ -109,13 +105,12 @@ int create_new_thread(thread_t *t, thread_attr_t *attr, void *(*start_func)(void
     // Add created thread_struct to list of thread blocks
     addthread_l(child_thread);
 
-    printf("\nParent_id : %d \n", getpid());
-    printf("\nChild_tid : %lu \n", child_thread->thread_id);
     free(thread_child_stack);
     (*t) = tid;
     return 0;
 }
 
+// Function to wait for a specific thread to terminate
 int join_thread(thread_t thread, void **retval)
 {
     thread_t t;
@@ -137,7 +132,7 @@ int join_thread(thread_t thread, void **retval)
     called_thread->blocked_join = calling_thread;
     calling_thread->state = THREAD_BLOCKED;
 
-    t = waitpid(thread, NULL, 0 | WNOHANG);
+    t = waitpid(thread, NULL, 0);
 
     if (t == -1)
         perror("thread has exited\n");
@@ -147,6 +142,10 @@ int join_thread(thread_t thread, void **retval)
     return 0;
 }
 
+/* Function to make a thread terminate itself
+return value of the thread to be available to thread_join()
+*/
+
 void exit_thread(void *ret_val)
 {
     tcb *curr_thread;
@@ -155,5 +154,5 @@ void exit_thread(void *ret_val)
     if (curr_thread->blocked_join != NULL)
         curr_thread->blocked_join->state = THREAD_READY;
     curr_thread->state = THREAD_DEAD;
-    syscall(SYS_exit, 0);
+    exit(0);
 }

@@ -1,6 +1,6 @@
 all: threading_lib clean
-threading_lib: test.o thread.o list.o
-	gcc test.o thread.o list.o -o threading_lib
+threading_lib: test.o thread.o doublyll.o
+	gcc test.o thread.o doublyll.o -o threading_lib
 
 test.o: test.c
 	gcc -c test.c
@@ -8,8 +8,8 @@ test.o: test.c
 thread.o: thread.c thread.h 
 	gcc -c thread.c
 
-list.o: list.c list.h
-	gcc -c list.c
+doublyll.o: doublyll.c doublyll.h
+	gcc -c doublyll.c
 
 clean:
 	rm *.o 
