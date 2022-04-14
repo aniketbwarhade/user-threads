@@ -142,9 +142,12 @@ int join_thread(thread_t thread, void **retval)
     return 0;
 }
 
-/* Function to make a thread terminate itself
-return value of the thread to be available to thread_join()
-*/
+/*
+ *   Logic of exit_thread code is referred from a git repo, link is pasted below:
+ *   https://gitlab.com/riddhighate.07/multithreading-library.git
+ */
+
+// Function to make a thread terminate itself return value of the thread to be available to thread_join()
 
 void exit_thread(void *ret_val)
 {
@@ -155,4 +158,26 @@ void exit_thread(void *ret_val)
         curr_thread->blocked_join->state = THREAD_READY;
     curr_thread->state = THREAD_DEAD;
     exit(0);
+}
+
+// Function to send signals to a specific thread All Error checking is done before
+// actually raising the signal to the  specified thread and status is returned
+int kill_thread(thread_t thread, int signal)
+{
+    if (signal == 0)
+    { // if signal is 0 no signal is send.
+        return 0;
+    }
+    if (signal < 0 || signal > 64)
+    { // if signal is invalid return EINVAL
+        return EINVAL;
+    }
+    int tid, ret_val;
+    tcb *target_thread;
+    int pid = get_self_thread_id();
+    target_thread = getthread_l(thread);
+    tid = (unsigned long)target_thread->thread_id;
+    ret_val = tgkill(pid, tid, signal);
+    // printf("kill returns: %d\n", ret_val);
+    return ret_val;
 }

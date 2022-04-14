@@ -27,9 +27,10 @@ typedef struct thread_attr_t
 {
     unsigned long stack_size; /* Stack size to be used by this thread. Default is SIGSTKSZ */
 } thread_attr_t;
+thread_t get_self_thread_id(void);
 int add_main_thread(void);
 int create_new_thread(thread_t *t, thread_attr_t *attr, void *(*start_func)(void *), void *args);
 int init_thread(void);
 int join_thread(thread_t thread, void **retval);
 void exit_thread(void *ret_val);
-thread_t get_self_thread_id(void);
+int kill_thread(thread_t thread, int signal);
