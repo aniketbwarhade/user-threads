@@ -10,9 +10,11 @@ typedef struct list
 {
     struct node *head;
     struct node *tail;
+    int count;
 } list;
 
-list *thread_list;
+list *thread_list; // Global pointer pointing to thread list
+
 void init_thread_l(void);
 void addthread_l(tcb *thread);
 tcb *removethread_l();

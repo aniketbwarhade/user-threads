@@ -34,3 +34,4 @@ int init_thread(void);
 int join_thread(thread_t thread, void **retval);
 void exit_thread(void *ret_val);
 int kill_thread(thread_t thread, int signal);
+void free_thread_list();

@@ -40,7 +40,7 @@ int main()
     create_new_thread(&t3, NULL, func_totestkill, NULL);
     create_new_thread(&t2, NULL, func_totestexit, NULL);
     exit_thread(temp);
-    printf("hii after exit_thread in main");
+    // printf("hii after exit_thread in main");
     // join_thread(t3, (void **)&status1);
     // join_thread(t2, (void **)&status2);
     // join_thread(t3, (void **)&status3);

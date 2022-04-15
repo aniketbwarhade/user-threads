@@ -23,6 +23,7 @@ thread_t get_self_thread_id(void)
 int add_main_thread(void)
 {
     tcb *main;
+    atexit(free_thread_list); // removing thread_details from memory before exiting,
     main = (tcb *)malloc(sizeof(tcb));
     if (main == NULL)
     {
@@ -105,7 +106,6 @@ int create_new_thread(thread_t *t, thread_attr_t *attr, void *(*start_func)(void
     // Add created thread_struct to list of thread blocks
     addthread_l(child_thread);
 
-    free(thread_child_stack);
     (*t) = tid;
     return 0;
 }
@@ -200,4 +200,20 @@ int kill_thread(thread_t thread, int signal)
     ret_val = tgkill(pid, tid, signal);
     // printf("kill returns: %d\n", ret_val);
     return ret_val;
+}
+
+// free all the threads struct from list
+void free_thread_list()
+{
+    tcb *t;
+    // free individual threads
+    while (thread_list->head != NULL)
+    {
+        t = removethread_l();
+        free(t->stack);
+        free(t);
+    }
+    // finally free thread_list
+    free(thread_list);
+    printf("\nfinally clear all threads\n");
 }
