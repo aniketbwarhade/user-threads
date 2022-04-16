@@ -1,5 +1,12 @@
 #include <sys/types.h>
 #include <stdio.h>
+
+// possible state of threads
+#define THREAD_RUNNING 0
+#define THREAD_READY 1
+#define THREAD_BLOCKED 2
+#define THREAD_DEAD 3
+#define THREAD_EXITED 4
 typedef unsigned long thread_t;
 /*Thread Control Block structure */
 typedef struct tcb
@@ -12,16 +19,6 @@ typedef struct tcb
     void *(*start_func)(void *);
     struct tcb *blocked_join; // Thread blocking on this thread
 } tcb;
-
-// possible state of threads
-enum
-{
-    THREAD_RUNNING,
-    THREAD_READY,
-    THREAD_BLOCKED,
-    THREAD_DEAD,
-    THREAD_EXITED
-};
 
 typedef struct thread_attr_t
 {

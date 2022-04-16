@@ -10,7 +10,6 @@ typedef struct list
 {
     struct node *head;
     struct node *tail;
-    int count;
 } list;
 
 list *thread_list; // Global pointer pointing to thread list

@@ -1,0 +1,12 @@
+# Ignore all file ending with .out/.o in One-One threading
+/One-One/**.out
+/One-One/**.o         
+threading_lib
+
+
+# Ignore all file ending with .out/.o in Many-One threading
+/Many-One/**.out
+/Many-One/**.o 
+
+# Ignore vscode folder
+.vscode

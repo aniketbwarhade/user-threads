@@ -142,6 +142,7 @@ int join_thread(thread_t thread, void **retval)
     {
         *retval = called_thread->return_val;
     }
+
     return 0;
 }
 

@@ -7,7 +7,6 @@ void init_thread_l()
     thread_list = (list *)malloc(sizeof(list));
     thread_list->head = NULL;
     thread_list->tail = NULL;
-    thread_list->count = 0;
 }
 
 void addthread_l(tcb *thread)
@@ -27,7 +26,6 @@ void addthread_l(tcb *thread)
         thread_list->tail->next = temp;
         thread_list->tail = temp;
     }
-    thread_list->count++;
     return;
 }
 

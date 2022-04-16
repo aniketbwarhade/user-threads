@@ -1,4 +1,0 @@
-# Ignore all files named .DS_Store or ending with .out
-**.out
-**.o
-threading_lib

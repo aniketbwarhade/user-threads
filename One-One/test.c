@@ -37,11 +37,12 @@ int main()
     int *temp = &i;
     // create_new_thread(&t1, NULL, func_totestjoin, (void *)temp);
     // create_new_thread(&t2, NULL, func_totestexit, NULL);
-    create_new_thread(&t3, NULL, func_totestkill, NULL);
-    create_new_thread(&t2, NULL, func_totestexit, NULL);
-    exit_thread(temp);
+    create_new_thread(&t3, NULL, func_totestjoin, (void *)temp);
+    // create_new_thread(&t2, NULL, func_totestexit, NULL);
+    // exit_thread(temp);
     // printf("hii after exit_thread in main");
-    // join_thread(t3, (void **)&status1);
+    join_thread(t3, (void **)&status1);
+    printf("%d", *status1);
     // join_thread(t2, (void **)&status2);
     // join_thread(t3, (void **)&status3);
     // kill_thread(t3, SIGKILL);

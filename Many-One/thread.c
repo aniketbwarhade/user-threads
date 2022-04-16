@@ -1,0 +1,12 @@
+#define _GNU_SOURCE
+#include <sched.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <syscall.h>
+#include "queue.h"
