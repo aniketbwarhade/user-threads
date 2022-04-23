@@ -12,8 +12,8 @@ typedef struct list
     struct node *tail;
 } list;
 
-list *thread_list; // Global pointer pointing to thread list
-
+static list *thread_list; // Global pointer pointing to thread list
+static tcb *curr_running;
 void init_thread_l(void);
 void addthread_l(tcb *thread);
 tcb *removethread_l();

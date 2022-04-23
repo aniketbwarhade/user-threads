@@ -63,7 +63,7 @@ int is_empty()
 
 tcb *getthread_l(thread_t thread)
 {
-    node *temp = (node *)malloc(sizeof(node));
+    node *temp;
     temp = thread_list->head;
     while (((temp)->thread->thread_id != thread) && temp->next != NULL)
     {
