@@ -1,7 +1,9 @@
+#include <stdio.h>
 #include "thread.h"
+
 typedef struct node
 {
-    tcb *thread;
+    tcb *list_thread;
     struct node *prev;
     struct node *next;
 } node;
@@ -12,10 +14,8 @@ typedef struct list
     struct node *tail;
 } list;
 
-static list *thread_list; // Global pointer pointing to thread list
-static tcb *curr_running;
-void init_thread_l(void);
-void addthread_l(tcb *thread);
-tcb *removethread_l();
-int is_empty();
-tcb *getthread_l(thread_t thread); // Get tcb_structure from thread_t
+void enqueue(tcb *thread, list *l);
+tcb *dequeue_thread(list *l);
+int is_empty(list *l);
+tcb *get_from_list(list *l, thread_t thread);
+int threads_count(list *l);

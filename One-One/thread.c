@@ -33,7 +33,7 @@ int add_main_thread(void)
 
     main->start_func = NULL;
     main->args = NULL;
-    main->state = THREAD_READY;
+    main->state = READY;
     main->return_val = NULL;
     main->blocked_join = NULL;
     main->thread_id = get_self_thread_id();
@@ -42,17 +42,17 @@ int add_main_thread(void)
     return 0;
 }
 
-int function_start(void *thread)
+int start_routine(void *thread)
 {
     tcb *t = (tcb *)thread;
     t->return_val = t->start_func(t->args);
-    t->state = THREAD_EXITED;
+    t->state = EXITED;
     return 0;
 }
 
 int create_new_thread(thread_t *t, thread_attr_t *attr, void *(*start_func)(void *), void *args)
 {
-    thread_t tid;
+    thread_t thread_id;
     unsigned long stack_size;
     char *thread_child_stack; // Pointer to stack of child thread
     char *stack_top;
@@ -93,20 +93,20 @@ int create_new_thread(thread_t *t, thread_attr_t *attr, void *(*start_func)(void
     stack_top = thread_child_stack + stack_size;
 
     child_thread->args = args;
-    child_thread->state = THREAD_RUNNING;
+    child_thread->state = RUNNING;
     child_thread->start_func = start_func;
-    tid = clone(&function_start, stack_top, CLONE_VM | SIGCHLD | CLONE_FS | CLONE_FILES | CLONE_SIGHAND, child_thread);
-    if (tid < 0)
+    thread_id = clone(&start_routine, stack_top, CLONE_VM | SIGCHLD | CLONE_FS | CLONE_FILES | CLONE_SIGHAND, child_thread);
+    if (thread_id < 0)
     {
         printf("ERROR: Clone failed unable to create the child process.\n");
         errno = EINVAL;
         return errno;
     }
-    child_thread->thread_id = tid;
+    child_thread->thread_id = thread_id;
     // Add created thread_struct to list of thread blocks
     addthread_l(child_thread);
 
-    (*t) = tid;
+    (*t) = thread_id;
     return 0;
 }
 
@@ -130,7 +130,7 @@ int join_thread(thread_t thread, void **retval)
         return -1;
 
     called_thread->blocked_join = calling_thread;
-    calling_thread->state = THREAD_BLOCKED;
+    calling_thread->state = BLOCKED;
 
     t = waitpid(thread, NULL, 0);
 
@@ -156,10 +156,10 @@ int join_thread(thread_t thread, void **retval)
 void exit_thread(void *ret_val)
 {
     tcb *curr_thread;
-    thread_t tid = get_self_thread_id();
-    curr_thread = getthread_l(tid);
+    thread_t thread_id = get_self_thread_id();
+    curr_thread = getthread_l(thread_id);
     thread_t main_thread_id = getpid();
-    if (main_thread_id == tid)
+    if (main_thread_id == thread_id)
     {
         node *temp;
         temp = thread_list->head;
@@ -176,7 +176,7 @@ void exit_thread(void *ret_val)
 
     curr_thread->return_val = ret_val;
     if (curr_thread->blocked_join != NULL)
-        curr_thread->blocked_join->state = THREAD_READY;
+        curr_thread->blocked_join->state = READY;
     curr_thread->state = THREAD_DEAD;
     exit(0);
 }
@@ -193,12 +193,12 @@ int kill_thread(thread_t thread, int signal)
     { // if signal is invalid return EINVAL
         return EINVAL;
     }
-    int tid, ret_val;
+    int thread_id, ret_val;
     tcb *target_thread;
     int pid = get_self_thread_id();
     target_thread = getthread_l(thread);
-    tid = (unsigned long)target_thread->thread_id;
-    ret_val = tgkill(pid, tid, signal);
+    thread_id = (unsigned long)target_thread->thread_id;
+    ret_val = tgkill(pid, thread_id, signal);
     // printf("kill returns: %d\n", ret_val);
     return ret_val;
 }

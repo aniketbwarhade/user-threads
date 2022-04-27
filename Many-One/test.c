@@ -1,44 +1,49 @@
-#define _GNU_SOURCE
-#include <sys/wait.h>
-#include <sys/utsname.h>
-#include <sched.h>
-#include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
-#include <malloc.h>
 #include <signal.h>
+#include <string.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include <errno.h>
-#include <sys/syscall.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <ucontext.h>
-#include "doublyll.h"
+#include "thread.h"
 
-void *fn1(void *arg)
+void *fun(void *arg)
 {
-    int i = 100;
-
-    printf("into thread1\n");
-
-    return NULL;
-}
-
-void *fn2(void *arg)
-{
-    int i = 200;
-
-    printf("into thread2\n");
-    return NULL;
+    int *temp = (int *)arg;
+    printf("Function Value: %d\n", *temp);
+    return (void *)temp;
 }
 
 int main()
 {
-    thread_t tid, pid;
-    init_thread_l();
-    create_new_thread(&tid, NULL, &fn1, NULL);
-    create_new_thread(&pid, NULL, &fn2, NULL);
-    printf("%lu %lu %lu\n", get_self_thread_id(), tid, pid);
+    mythread_init();
+    thread_t t1, t2;
+    printf("------Creating a thread in many-one model------\n");
+    int i = 42;
+    int *temp1 = &i;
+    int j = 47;
+    int *temp2 = &j;
+    int x = create_new_thread(&t1, NULL, fun, (void *)temp1);
+    int y = create_new_thread(&t2, NULL, fun, (void *)temp2);
+
+    sleep(1);
+
+    if (x == 0)
+    {
+        printf("-----Test1 Passed-----\n");
+    }
+    else
+    {
+        printf("-----Test1 failed-----\n");
+    }
+    if (y == 0)
+    {
+        printf("-----Test2 Passed-----\n");
+    }
+    else
+    {
+        printf("-----Test2 failed-----\n");
+    }
 
     return 0;
 }

@@ -1,155 +1,211 @@
 #define _GNU_SOURCE
-#include <sched.h>
-#include <string.h>
+#include <sys/types.h>
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
+#include <sys/syscall.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sched.h>
 #include <unistd.h>
 #include <signal.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <syscall.h>
-#include <setjmp.h>
-#include <sys/time.h>
+#include <stdint.h>
+#include <asm/prctl.h>
+#include <sys/prctl.h>
+#include <linux/futex.h>
+#include <ucontext.h>
+#include <sys/mman.h>
 #include "doublyll.h"
-// #include "thread.h"
 
-struct sigaction action;
-struct itimerval timer;
-tcb *sched_thread;
-int flag = 0;
+int tid_count = 0;
+list *ready_queue;
+static struct itimerval timer;
+tcb *curr_thread;
+ucontext_t *ucp;
 
-// Return thread_t of calling thread
-thread_t get_self_thread_id(void)
+void strt_timer(struct itimerval *timer)
 {
-	thread_t self_tid;
-	self_tid = gettid();
-	return self_tid;
-}
-tcb *get_next_ready_thread(void)
-{
-	thread_t t = sched_thread->thread_id;
-	node *tmp = thread_list->head;
-	if (!tmp)
-		return NULL;
-
-	do
-	{
-		if (tmp->thread->thread_id = t)
-		{
-			return tmp->next->thread;
-		}
-		tmp = tmp->next;
-	} while (tmp != NULL);
-
-	return NULL;
+    timer->it_interval.tv_sec = 0;
+    timer->it_interval.tv_usec = ALARM;
+    timer->it_value.tv_sec = 0;
+    timer->it_value.tv_usec = ALARM;
+    setitimer(ITIMER_REAL, timer, 0);
 }
 
+void stp_timer(struct itimerval *timer)
+{
+    timer->it_interval.tv_sec = 0;
+    timer->it_interval.tv_usec = 0;
+    timer->it_value.tv_sec = 0;
+    timer->it_value.tv_usec = 0;
+    setitimer(ITIMER_REAL, timer, 0);
+}
+
+// Function to launch the start routine
+static void start_routine(void)
+{
+    tcb *thread;
+    thread = get_cthread();
+    thread->ret_val = thread->thread_start(thread->args);
+    thread->state = EXITED;
+    setcontext(ucp);
+}
+
+/*
+ *   Whenever sigalrm is raised scheduler is called
+ */
 void scheduler()
 {
-	tcb *n;
+    stp_timer(&timer);
+    int count = threads_count(ready_queue);
+    void *old;
+    old = get_cthread();
+    while (count > 0)
+    {
+        curr_thread = dequeue_thread(ready_queue);
 
-	if (setjmp(sched_thread->buf))
-	{
-		printf("again in main\n");
-	}
-	else
-	{
-		n = get_next_ready_thread();
-		sched_thread = n;
-		longjmp(n->buf, 1);
-	}
+        if (curr_thread->state == READY)
+        {
+            // as glibc doesn't support arch_prctl so we have to the corresponding syscall
+            syscall(SYS_arch_prctl, ARCH_SET_FS, curr_thread); // access thread specific memory (TLS) in fs register
+            strt_timer(&timer);
+            ucp = (ucontext_t *)malloc(sizeof(ucontext_t));
+            ucp->uc_link = 0;
+            ucp->uc_flags = 0;
+            ucp->uc_stack.ss_size = STACK_SIZE;
+            ucp->uc_stack.ss_sp = allocate_stack(STACK_SIZE);
+            getcontext(ucp);
+            curr_thread->t_context->uc_link = ucp;
+            swapcontext(ucp, curr_thread->t_context);
+            stp_timer(&timer);
+
+            syscall(SYS_arch_prctl, ARCH_SET_FS, old);
+            switch (curr_thread->state)
+            {
+            case EXITED:
+                enqueue(curr_thread, ready_queue);
+                break;
+
+            default:
+                break;
+            }
+        }
+        else if (curr_thread->state = EXITED)
+        {
+            strt_timer(&timer);
+            enqueue(curr_thread, ready_queue);
+            stp_timer(&timer);
+        }
+        else
+        {
+            return;
+        }
+        count--;
+    }
+
+    strt_timer(&timer);
 }
 
-int add_main_thread(void)
+// Function to get the current thread
+tcb *get_cthread(void)
 {
-	tcb *m;
-	m = (tcb *)malloc(sizeof(tcb));
-	if (m == NULL)
-	{
-		perror("ERROR: Unable to allocate memory for main thread.\n");
-		return errno;
-	}
-
-	m->start_func = NULL;
-	m->args = NULL;
-	m->state = THREAD_READY;
-	m->return_val = NULL;
-	m->blocked_join = NULL;
-	m->thread_id = get_self_thread_id();
-	addthread_l(m);
-	return 0;
+    long address;
+    syscall(SYS_arch_prctl, ARCH_GET_FS, &address);
+    return (tcb *)address;
 }
-int create_new_thread(thread_t *t, const thread_attr_t *attr, void *(*start_function)(void *), void *arg)
+
+// First function to be called in the main application program. This creates and initialize the main thread.
+// Timer is started for raising sigvtalrm signal which further will call scheduler
+int mythread_init(void)
 {
-	tcb *child_thread;
-	int ret;
+    curr_thread = (tcb *)malloc(sizeof(tcb));
+    curr_thread->args = NULL;
+    curr_thread->ret_val = NULL;
+    curr_thread->thread_start = NULL;
+    curr_thread->stack = NULL;
+    curr_thread->stack_size = 0;
+    curr_thread->thread_id = tid_count++;
+    curr_thread->t_context = (ucontext_t *)malloc(sizeof(ucontext_t));
+    getcontext(curr_thread->t_context);
+    ready_queue = (list *)malloc(sizeof(list));
+    ready_queue->head = ready_queue->tail = NULL;
 
-	if (!thread_list)
-	{
-		/* first create call
-			Add main thread
-		*/
+    // setting signal for timer
+    struct sigaction action;
+    sigset_t mask;
+    sigfillset(&mask);
+    action.sa_handler = scheduler;
+    action.sa_mask = mask;
+    action.sa_flags = 0;
+    sigaction(SIGALRM, &action, NULL);
 
-		memset(&action, 0, sizeof(action));
+    strt_timer(&timer);
+    return 0;
+}
+void *allocate_stack(size_t size)
+{
+    void *stack = NULL;
+    stack = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+    if (stack == MAP_FAILED)
+    {
+        perror("Stack Allocation");
+        return NULL;
+    }
+    return stack;
+}
 
-		action.sa_handler = scheduler;
+// Function for creating the thread
+int create_new_thread(thread_t *thread, thread_attr_t *attr, void *(*thread_start)(void *), void *args)
+{
 
-		sigaction(SIGVTALRM, &action, NULL);
+    if (!thread || !thread_start)
+    {
+        errno = EINVAL;
+        return errno;
+    }
 
-		ret = add_main_thread();
+    tcb *new_thread = (tcb *)malloc(sizeof(tcb));
+    if (!new_thread)
+    {
+        errno = ENOMEM;
+        return errno;
+    }
 
-		if (ret != 0)
-		{
-			return ret;
-		}
+    stp_timer(&timer);
 
-		sched_thread = thread_list->head->thread;
-	}
+    new_thread->thread_id = tid_count++;
+    new_thread->state = RUNNING;
+    new_thread->thread_start = thread_start;
+    new_thread->args = args;
+    if (attr)
+    {
+        new_thread->stack_size = attr->stack_size;
+    }
+    else
+    {
+        new_thread->stack_size = STACK_SIZE;
+    }
+    new_thread->stack = allocate_stack(new_thread->stack_size);
+    new_thread->t_context = (ucontext_t *)malloc(sizeof(ucontext_t));
+    new_thread->t_context->uc_link = 0;
+    new_thread->t_context->uc_stack.ss_sp = allocate_stack(new_thread->stack_size);
+    new_thread->t_context->uc_stack.ss_size = new_thread->stack_size;
+    new_thread->t_context->uc_flags = 0;
 
-	/*
-		Create thread_struct for child thread
-	*/
-	child_thread = (tcb *)malloc(sizeof(tcb));
-	if (child_thread == NULL)
-	{
-		perror("ERROR: Unable to allocate memory for thread_struct.\n");
-		return errno;
-	}
+    getcontext(new_thread->t_context);
+    makecontext(new_thread->t_context, start_routine, 0);
 
-	child_thread->start_func = start_function;
-	child_thread->args = arg;
-	child_thread->state = THREAD_READY;
-	child_thread->return_val = NULL;
-	child_thread->blocked_join = NULL;
-	child_thread->thread_id = thread_list->tail->thread->thread_id + 1;
-	*t = child_thread->thread_id;
-	/* Add created thread_struct to list of thread blocks
-	 */
-	addthread_l(child_thread);
-	if (setjmp(sched_thread->buf))
-	{
-	}
-	else
-	{
-		sched_thread = child_thread;
-		if (!flag)
-		{
+    if (new_thread->thread_id == EINVAL || new_thread->thread_id == ENOMEM)
+    {
+        printf("Stack problem");
+    }
 
-			/* Configure the timer to expire after 10 usec... */
-			timer.it_value.tv_sec = 0;
-			timer.it_value.tv_usec = 10;
-			/* ... and every 10 usec after that. */
-			timer.it_interval.tv_sec = 0;
-			timer.it_interval.tv_usec = 10;
+    new_thread->state = READY;
+    enqueue(new_thread, ready_queue);
 
-			setitimer(ITIMER_VIRTUAL, &timer, NULL);
+    *thread = new_thread->thread_id;
 
-			flag = 1;
-		}
-
-		start_function(arg);
-	}
-
-	return 0;
+    strt_timer(&timer);
+    return 0;
 }

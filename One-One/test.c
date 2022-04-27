@@ -54,16 +54,16 @@ int main()
     int *status1 = NULL, *status2 = NULL;
     int i = 11;
     int *temp = &i;
-    create_new_thread(&tid, NULL, &func_totestjoin, (void *)temp);
-    join_thread(tid, (void **)&status1);
+    create_new_thread(&thread_id, NULL, &func_totestjoin, (void *)temp);
+    join_thread(thread_id, (void **)&status1);
     printf("%d\n", *status1);
 */
 
 /*
     {code to test thread_exit}
-    create_new_thread(&tid, NULL, &func_totestexit, NULL);
+    create_new_thread(&thread_id, NULL, &func_totestexit, NULL);
     create_new_thread(&pid, NULL, &func_totestexit, NULL);
-    join_thread(tid, (void **)&status1);
+    join_thread(thread_id, (void **)&status1);
     join_thread(pid, (void **)&status2);
     printf("%d\n", *status1);
     printf("%d\n", *status2);

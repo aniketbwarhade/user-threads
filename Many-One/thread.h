@@ -1,33 +1,40 @@
 #include <sys/types.h>
 #include <stdio.h>
-#include <setjmp.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <ucontext.h>
 
-// possible state of threads
-#define THREAD_RUNNING 0
-#define THREAD_READY 1
-#define THREAD_BLOCKED 2
-#define THREAD_DEAD 3
-#define THREAD_EXITED 4
+#define RUNNING 0
+#define READY 1
+#define BLOCKED 2
+#define DEAD 3
+#define EXITED 4
+#define STACK_SIZE 1024 * 64
+#define ALARM 2000
+
 typedef unsigned long thread_t;
-/*Thread Control Block structure */
+
 typedef struct tcb
 {
     thread_t thread_id;
     void *stack;
-    void *args;
+    size_t stack_size;
+    void *ret_val;
+    struct tcb *next;
+    void *(*thread_start)(void *);
     int state;
-    void *return_val;
-    void *(*start_func)(void *);
-    jmp_buf buf;
-    struct tcb *blocked_join; // Thread blocking on this thread
+    void *args;
+    ucontext_t *t_context;
 } tcb;
 
 typedef struct thread_attr_t
 {
-    unsigned long stack_size; /* Stack size to be used by this thread. Default is SIGSTKSZ */
+    unsigned long stack_size; // Stack size to be used by this thread
 } thread_attr_t;
 
-thread_t get_self_thread_id(void);
-int add_main_thread(void);
-int create_new_thread(thread_t *t, const thread_attr_t *attr, void *(*start_function)(void *), void *arg);
-int init_thread(void);
+int mythread_init(void);
+void *allocate_stack(size_t size);
+int create_new_thread(thread_t *thread, thread_attr_t *attr, void *(*thread_start)(void *), void *args);
+tcb *get_cthread(void);
+void strt_timer(struct itimerval *timer);
+void stp_timer(struct itimerval *timer);
