@@ -48,7 +48,7 @@ static void start_routine(void)
     tcb *thread;
     thread = get_cthread();
     thread->ret_val = thread->start_func(thread->args);
-    thread->state = DEAD;
+    thread->state = EXITED;
     setcontext(ucp);
 }
 
@@ -60,6 +60,7 @@ static void start_routine(void)
 // Whenever sigalrm is raised scheduler is called
 void scheduler()
 {
+    // printf("HII");
     stp_timer(&timer);
     int c = threads_count(ready_queue);
     void *prev_thread;
@@ -194,43 +195,63 @@ int create_new_thread(thread_t *t, thread_attr_t *attr, void *(*start_func)(void
     return 0;
 }
 
+// Function to wait for a specific thread to terminate
 int join_thread(thread_t thread, void **retval)
 {
+    strt_timer(&timer);
     tcb *this_thread, *waitfor_thread;
+    // find the node having that particular thread id
     waitfor_thread = getthread_q(ready_queue, thread);
-    this_thread = curr_thread;
-    if (thread == this_thread->thread_id)
+    if (thread == curr_thread->thread_id)
     {
         return EDEADLK;
     }
 
-    /* If the thread is already dead, no need to wait. Just collect the return
+    /* If the thread is already EXITED, no need to wait. Just collect the return
      * value and exit
      */
-    if (waitfor_thread->state == DEAD)
+    if (waitfor_thread->state == EXITED)
     {
         if (retval)
             *retval = waitfor_thread->ret_val;
         return 0;
     }
 
-    /* If the thread is not dead and someone else is already waiting on it
+    /* If the thread is not EXITED and someone else is already waiting on it
      * return an error
      */
     if (waitfor_thread->blocked_join != NULL)
         return -1;
-
-    waitfor_thread->blocked_join = this_thread;
-
-    this_thread->state = BLOCKED;
-
+    waitfor_thread->blocked_join = curr_thread;
+    curr_thread->state = BLOCKED;
     // othewise loop until the process is terminated
-    while (waitfor_thread->state != DEAD)
+    while (waitfor_thread->state != EXITED)
         ;
-
     /* Target thread died, collect return value and return */
     if (retval)
         *retval = waitfor_thread->ret_val;
-
+    stp_timer(&timer);
     return 0;
+}
+
+// Function to make a thread terminate itself , return value of the thread to be available to thread_join()
+void exit_thread(void *retval)
+{
+    strt_timer(&timer);
+    if (curr_thread->state == EXITED)
+    {
+        return;
+    }
+
+    curr_thread->ret_val = retval;
+    // check if the thread is already blocked or not
+    if (curr_thread->blocked_join != NULL)
+    {
+        curr_thread->blocked_join->state = READY;
+    }
+
+    curr_thread->state = EXITED;
+    setcontext(ucp);
+    stp_timer(&timer);
+    return;
 }

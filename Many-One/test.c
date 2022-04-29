@@ -7,11 +7,21 @@
 #include <errno.h>
 #include "thread.h"
 
+int a = 500;
 void *fun(void *arg)
 {
     int *temp = (int *)arg;
     printf("Function Value: %d\n", *temp);
     return (void *)temp;
+}
+
+void *fn1(void *arg)
+{
+    printf("into thread1\n");
+
+    exit_thread(&a);
+    printf("after exit");
+    return NULL;
 }
 
 int main()
@@ -28,7 +38,7 @@ int main()
     int *status1 = NULL;
     int i = 11;
     int *temp = &i;
-    create_new_thread(&t1, NULL, &fun, (void *)temp);
+    create_new_thread(&t1, NULL, &fn1, (void *)temp);
     join_thread(t1, (void **)&status1);
     printf("status : %d\n", *status1);
 

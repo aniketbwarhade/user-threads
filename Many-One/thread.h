@@ -7,7 +7,7 @@
 #define RUNNING 0
 #define READY 1
 #define BLOCKED 2
-#define DEAD 3
+#define EXITED 3
 #define STACK_SIZE 1024 * 64
 #define ALARM 2000
 
@@ -39,3 +39,4 @@ int join_thread(thread_t thread, void **retval);
 tcb *get_cthread(void);
 void strt_timer(struct itimerval *timer);
 void stp_timer(struct itimerval *timer);
+void exit_thread(void *retval);
