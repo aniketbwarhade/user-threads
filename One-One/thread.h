@@ -6,7 +6,6 @@
 #define READY 1
 #define BLOCKED 2
 #define DEAD 3
-#define EXITED 4
 
 typedef unsigned long thread_t;
 /*Thread Control Block structure */

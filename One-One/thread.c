@@ -46,7 +46,7 @@ int start_routine(void *thread)
 {
     tcb *t = (tcb *)thread;
     t->return_val = t->start_func(t->args);
-    t->state = EXITED;
+    t->state = DEAD;
     return 0;
 }
 
