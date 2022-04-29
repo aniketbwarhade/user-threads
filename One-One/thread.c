@@ -103,7 +103,7 @@ int create_new_thread(thread_t *t, thread_attr_t *attr, void *(*start_func)(void
         return errno;
     }
     child_thread->thread_id = thread_id;
-    // Add created thread_struct to list of thread blocks
+    // Add created thread_struct to queue of thread blocks
     addthread_l(child_thread);
 
     (*t) = thread_id;
@@ -118,7 +118,7 @@ int join_thread(thread_t thread, void **retval)
     called_thread = getthread_l(thread);
     calling_thread = getthread_l(get_self_thread_id());
     // If the thread is already dead, no need to wait. Just collect the return value and exit
-    if (called_thread->state == THREAD_DEAD)
+    if (called_thread->state == DEAD)
     {
         *retval = called_thread->return_val;
         return 0;
@@ -146,11 +146,6 @@ int join_thread(thread_t thread, void **retval)
     return 0;
 }
 
-/*
- *   Logic of exit_thread code is referred from a git repo, link is pasted below:
- *   https://gitlab.com/riddhighate.07/multithreading-library.git
- */
-
 // Function to make a thread terminate itself return value of the thread to be available to thread_join()
 
 void exit_thread(void *ret_val)
@@ -162,7 +157,7 @@ void exit_thread(void *ret_val)
     if (main_thread_id == thread_id)
     {
         node *temp;
-        temp = thread_list->head;
+        temp = thread_list->front;
         while (temp != NULL)
         {
             if (temp->thread->thread_id != main_thread_id)
@@ -177,7 +172,7 @@ void exit_thread(void *ret_val)
     curr_thread->return_val = ret_val;
     if (curr_thread->blocked_join != NULL)
         curr_thread->blocked_join->state = READY;
-    curr_thread->state = THREAD_DEAD;
+    curr_thread->state = DEAD;
     exit(0);
 }
 
@@ -203,12 +198,12 @@ int kill_thread(thread_t thread, int signal)
     return ret_val;
 }
 
-// free all the threads struct from list
+// free all the threads struct from queue
 void free_thread_list()
 {
     tcb *t;
     // free individual threads
-    while (thread_list->head != NULL)
+    while (thread_list->front != NULL)
     {
         t = removethread_l();
         free(t->stack);

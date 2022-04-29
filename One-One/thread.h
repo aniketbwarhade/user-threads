@@ -2,11 +2,11 @@
 #include <stdio.h>
 
 // possible state of threads
-#define THREAD_RUNNING 0
-#define THREAD_READY 1
-#define THREAD_BLOCKED 2
-#define THREAD_DEAD 3
-#define THREAD_EXITED 4
+#define RUNNING 0
+#define READY 1
+#define BLOCKED 2
+#define DEAD 3
+#define EXITED 4
 
 typedef unsigned long thread_t;
 /*Thread Control Block structure */

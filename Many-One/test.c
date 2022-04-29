@@ -16,9 +16,9 @@ void *fun(void *arg)
 
 int main()
 {
-    mythread_init();
+    add_main_thread();
     thread_t t1, t2;
-    printf("------Creating a thread in many-one model------\n");
+    printf("thread in many-one model\n");
     int i = 42;
     int *temp1 = &i;
     int j = 47;
@@ -28,22 +28,7 @@ int main()
 
     sleep(1);
 
-    if (x == 0)
-    {
-        printf("-----Test1 Passed-----\n");
-    }
-    else
-    {
-        printf("-----Test1 failed-----\n");
-    }
-    if (y == 0)
-    {
-        printf("-----Test2 Passed-----\n");
-    }
-    else
-    {
-        printf("-----Test2 failed-----\n");
-    }
+    printf("succesfull");
 
     return 0;
 }

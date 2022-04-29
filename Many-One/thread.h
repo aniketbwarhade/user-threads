@@ -17,11 +17,10 @@ typedef unsigned long thread_t;
 typedef struct tcb
 {
     thread_t thread_id;
-    void *stack;
     size_t stack_size;
     void *ret_val;
     struct tcb *next;
-    void *(*thread_start)(void *);
+    void *(*start_func)(void *);
     int state;
     void *args;
     ucontext_t *t_context;
@@ -30,11 +29,12 @@ typedef struct tcb
 typedef struct thread_attr_t
 {
     unsigned long stack_size; // Stack size to be used by this thread
+
 } thread_attr_t;
 
-int mythread_init(void);
+int add_main_thread(void);
 void *allocate_stack(size_t size);
-int create_new_thread(thread_t *thread, thread_attr_t *attr, void *(*thread_start)(void *), void *args);
+int create_new_thread(thread_t *thread, thread_attr_t *attr, void *(*start_func)(void *), void *args);
 tcb *get_cthread(void);
 void strt_timer(struct itimerval *timer);
 void stp_timer(struct itimerval *timer);

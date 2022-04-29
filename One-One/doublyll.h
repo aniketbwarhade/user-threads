@@ -6,13 +6,13 @@ typedef struct node
     struct node *next;
 } node;
 
-typedef struct list
+typedef struct queue
 {
-    struct node *head;
-    struct node *tail;
-} list;
+    struct node *front;
+    struct node *rear;
+} queue;
 
-list *thread_list; // Global pointer pointing to thread list
+queue *thread_list; // Global pointer pointing to thread queue
 
 void init_thread_l(void);
 void addthread_l(tcb *thread);

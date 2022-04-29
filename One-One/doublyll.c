@@ -4,28 +4,28 @@
 
 void init_thread_l()
 {
-    thread_list = (list *)malloc(sizeof(list));
-    thread_list->head = NULL;
-    thread_list->tail = NULL;
+    thread_list = (queue *)malloc(sizeof(queue));
+    thread_list->front = NULL;
+    thread_list->rear = NULL;
     thread_list->count = 0;
 }
 
 void addthread_l(tcb *thread)
 {
-    node *temp = (node *)malloc(sizeof(node));
-    temp->thread = thread;
-    temp->next = NULL;
-    temp->prev = NULL;
+    node *t = (node *)malloc(sizeof(node));
+    t->thread = thread;
+    t->next = NULL;
+    t->prev = NULL;
 
-    if (thread_list->head == NULL && thread_list->tail == NULL)
+    if (thread_list->front == NULL && thread_list->rear == NULL)
     {
-        thread_list->head = thread_list->tail = temp;
+        thread_list->front = thread_list->rear = t;
     }
     else
     {
-        temp->prev = thread_list->tail;
-        thread_list->tail->next = temp;
-        thread_list->tail = temp;
+        t->prev = thread_list->rear;
+        thread_list->rear->next = t;
+        thread_list->rear = t;
     }
     thread_list->count++;
     return;
@@ -38,21 +38,21 @@ tcb *removethread_l()
         return NULL;
     }
     tcb *ret;
-    node *temp;
-    temp = thread_list->head;
-    ret = temp->thread;
-    thread_list->head = temp->next;
-    temp->next = NULL;
-    temp->prev = NULL;
-    free(temp);
+    node *t;
+    t = thread_list->front;
+    ret = t->thread;
+    thread_list->front = t->next;
+    t->next = NULL;
+    t->prev = NULL;
+    free(t);
 
-    if (thread_list->head == NULL)
+    if (thread_list->front == NULL)
     {
-        thread_list->tail = NULL;
+        thread_list->rear = NULL;
     }
     else
     {
-        thread_list->head->prev = NULL;
+        thread_list->front->prev = NULL;
     }
 
     return ret;
@@ -60,21 +60,21 @@ tcb *removethread_l()
 
 int is_empty()
 {
-    return (!thread_list->head && !thread_list->tail);
+    return (!thread_list->front && !thread_list->rear);
 }
 
 tcb *getthread_l(thread_t thread)
 {
-    node *temp = (node *)malloc(sizeof(node));
-    temp = thread_list->head;
-    while (((temp)->thread->thread_id != thread) && temp->next != NULL)
+    node *t = (node *)malloc(sizeof(node));
+    t = thread_list->front;
+    while (((t)->thread->thread_id != thread) && t->next != NULL)
     {
-        temp = temp->next;
+        t = t->next;
     }
 
-    if ((temp)->thread->thread_id != thread)
+    if ((t)->thread->thread_id != thread)
     {
         return NULL;
     }
-    return temp->thread;
+    return t->thread;
 }

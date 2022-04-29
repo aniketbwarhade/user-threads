@@ -1,6 +1,6 @@
-all: mthreading_lib clean
-mthreading_lib: test.o thread.o  doublyll.o
-	gcc test.o thread.o doublyll.o -o mthreading_lib
+all: mthreading_lib
+mthreading_lib: test.o thread.o  queue.o
+	gcc test.o thread.o queue.o -o mthreading_lib
 
 test.o: test.c
 	gcc -c test.c
@@ -9,8 +9,7 @@ test.o: test.c
 thread.o: thread.c thread.h 
 	gcc -c thread.c
 
-doublyll.o: doublyll.c doublyll.h
-	gcc -c doublyll.c
+queue.o: queue.c queue.h
+	gcc -c queue.c
 
-clean:
-	rm *.o 
+

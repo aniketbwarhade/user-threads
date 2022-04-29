@@ -2,7 +2,7 @@
 
 ## Getting started
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+To make it easy for you to get started with GitLab, here's a queue of recommended next steps.
 
 Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
 
@@ -56,7 +56,7 @@ Choose a self-explaining name for your project.
 
 ## Description
 
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A queue of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to queue differentiating factors.
 
 ## Badges
 
@@ -80,7 +80,7 @@ Tell people where they can go to for help. It can be any combination of an issue
 
 ## Roadmap
 
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+If you have ideas for releases in the future, it is a good idea to queue them in the README.
 
 ## Contributing
 

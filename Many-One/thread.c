@@ -16,11 +16,11 @@
 #include <linux/futex.h>
 #include <ucontext.h>
 #include <sys/mman.h>
-#include "doublyll.h"
+#include "queue.h"
 
 int tid_count = 0;
-list *ready_queue;
-static struct itimerval timer;
+queue *ready_queue;
+struct itimerval timer;
 tcb *curr_thread;
 ucontext_t *ucp;
 
@@ -47,28 +47,31 @@ static void start_routine(void)
 {
     tcb *thread;
     thread = get_cthread();
-    thread->ret_val = thread->thread_start(thread->args);
+    thread->ret_val = thread->start_func(thread->args);
     thread->state = EXITED;
     setcontext(ucp);
 }
 
 /*
- *   Whenever sigalrm is raised scheduler is called
+ *   Logic of scheduler code is referred from a git repo, link is pasted below:
+ *   http://nitish712.blogspot.com/2012/10/thread-library-using-context-switching.html
  */
+
+// Whenever sigalrm is raised scheduler is called
 void scheduler()
 {
     stp_timer(&timer);
-    int count = threads_count(ready_queue);
-    void *old;
-    old = get_cthread();
-    while (count > 0)
+    int c = threads_count(ready_queue);
+    void *prev_thread;
+    prev_thread = get_cthread();
+    while (c > 0)
     {
         curr_thread = dequeue_thread(ready_queue);
 
         if (curr_thread->state == READY)
         {
             // as glibc doesn't support arch_prctl so we have to the corresponding syscall
-            syscall(SYS_arch_prctl, ARCH_SET_FS, curr_thread); // access thread specific memory (TLS) in fs register
+            syscall(SYS_arch_prctl, ARCH_SET_FS, curr_thread); // To access thread specific memory (TLS) in fs register
             strt_timer(&timer);
             ucp = (ucontext_t *)malloc(sizeof(ucontext_t));
             ucp->uc_link = 0;
@@ -79,29 +82,13 @@ void scheduler()
             curr_thread->t_context->uc_link = ucp;
             swapcontext(ucp, curr_thread->t_context);
             stp_timer(&timer);
-
-            syscall(SYS_arch_prctl, ARCH_SET_FS, old);
-            switch (curr_thread->state)
-            {
-            case EXITED:
-                enqueue(curr_thread, ready_queue);
-                break;
-
-            default:
-                break;
-            }
-        }
-        else if (curr_thread->state = EXITED)
-        {
-            strt_timer(&timer);
-            enqueue(curr_thread, ready_queue);
-            stp_timer(&timer);
+            syscall(SYS_arch_prctl, ARCH_SET_FS, prev_thread);
         }
         else
         {
             return;
         }
-        count--;
+        c--;
     }
 
     strt_timer(&timer);
@@ -117,21 +104,20 @@ tcb *get_cthread(void)
 
 // First function to be called in the main application program. This creates and initialize the main thread.
 // Timer is started for raising sigvtalrm signal which further will call scheduler
-int mythread_init(void)
+int add_main_thread(void)
 {
     curr_thread = (tcb *)malloc(sizeof(tcb));
     curr_thread->args = NULL;
     curr_thread->ret_val = NULL;
-    curr_thread->thread_start = NULL;
-    curr_thread->stack = NULL;
+    curr_thread->start_func = NULL;
     curr_thread->stack_size = 0;
     curr_thread->thread_id = tid_count++;
     curr_thread->t_context = (ucontext_t *)malloc(sizeof(ucontext_t));
     getcontext(curr_thread->t_context);
-    ready_queue = (list *)malloc(sizeof(list));
-    ready_queue->head = ready_queue->tail = NULL;
+    ready_queue = (queue *)malloc(sizeof(queue));
+    ready_queue->front = ready_queue->rear = NULL;
 
-    // setting signal for timer
+    /* Set up SIGALRM signal handler */
     struct sigaction action;
     sigset_t mask;
     sigfillset(&mask);
@@ -156,27 +142,25 @@ void *allocate_stack(size_t size)
 }
 
 // Function for creating the thread
-int create_new_thread(thread_t *thread, thread_attr_t *attr, void *(*thread_start)(void *), void *args)
+int create_new_thread(thread_t *thread, thread_attr_t *attr, void *(*start_func)(void *), void *args)
 {
 
-    if (!thread || !thread_start)
+    if (!thread || !start_func)
     {
-        errno = EINVAL;
-        return errno;
+        return EINVAL;
     }
 
     tcb *new_thread = (tcb *)malloc(sizeof(tcb));
     if (!new_thread)
     {
-        errno = ENOMEM;
-        return errno;
+        return ENOMEM;
     }
 
     stp_timer(&timer);
 
     new_thread->thread_id = tid_count++;
     new_thread->state = RUNNING;
-    new_thread->thread_start = thread_start;
+    new_thread->start_func = start_func;
     new_thread->args = args;
     if (attr)
     {
@@ -186,7 +170,6 @@ int create_new_thread(thread_t *thread, thread_attr_t *attr, void *(*thread_star
     {
         new_thread->stack_size = STACK_SIZE;
     }
-    new_thread->stack = allocate_stack(new_thread->stack_size);
     new_thread->t_context = (ucontext_t *)malloc(sizeof(ucontext_t));
     new_thread->t_context->uc_link = 0;
     new_thread->t_context->uc_stack.ss_sp = allocate_stack(new_thread->stack_size);
