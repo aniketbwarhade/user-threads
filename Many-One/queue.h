@@ -17,5 +17,5 @@ typedef struct queue
 void enqueue(tcb *thread, queue *q);
 tcb *dequeue_thread(queue *q);
 int is_empty(queue *q);
-tcb *getthread_l(queue *q, thread_t thread);
+tcb *getthread_q(queue *q, thread_t thread);
 int threads_count(queue *q);

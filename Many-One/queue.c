@@ -49,7 +49,7 @@ int is_empty(queue *q)
     return (!q->front && !q->rear);
 }
 
-tcb *getthread_l(queue *q, thread_t thread)
+tcb *getthread_q(queue *q, thread_t thread)
 {
     node *t = (node *)malloc(sizeof(node));
     t = q->front;

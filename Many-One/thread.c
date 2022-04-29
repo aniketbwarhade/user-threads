@@ -48,7 +48,7 @@ static void start_routine(void)
     tcb *thread;
     thread = get_cthread();
     thread->ret_val = thread->start_func(thread->args);
-    thread->state = EXITED;
+    thread->state = DEAD;
     setcontext(ucp);
 }
 
@@ -142,10 +142,10 @@ void *allocate_stack(size_t size)
 }
 
 // Function for creating the thread
-int create_new_thread(thread_t *thread, thread_attr_t *attr, void *(*start_func)(void *), void *args)
+int create_new_thread(thread_t *t, thread_attr_t *attr, void *(*start_func)(void *), void *args)
 {
 
-    if (!thread || !start_func)
+    if (!t || !start_func)
     {
         return EINVAL;
     }
@@ -153,6 +153,7 @@ int create_new_thread(thread_t *thread, thread_attr_t *attr, void *(*start_func)
     tcb *new_thread = (tcb *)malloc(sizeof(tcb));
     if (!new_thread)
     {
+        perror("ERROR: Unable to allocate memory for tcb.\n");
         return ENOMEM;
     }
 
@@ -187,8 +188,49 @@ int create_new_thread(thread_t *thread, thread_attr_t *attr, void *(*start_func)
     new_thread->state = READY;
     enqueue(new_thread, ready_queue);
 
-    *thread = new_thread->thread_id;
+    *t = new_thread->thread_id;
 
     strt_timer(&timer);
+    return 0;
+}
+
+int join_thread(thread_t thread, void **retval)
+{
+    tcb *this_thread, *waitfor_thread;
+    waitfor_thread = getthread_q(ready_queue, thread);
+    this_thread = curr_thread;
+    if (thread == this_thread->thread_id)
+    {
+        return EDEADLK;
+    }
+
+    /* If the thread is already dead, no need to wait. Just collect the return
+     * value and exit
+     */
+    if (waitfor_thread->state == DEAD)
+    {
+        if (retval)
+            *retval = waitfor_thread->ret_val;
+        return 0;
+    }
+
+    /* If the thread is not dead and someone else is already waiting on it
+     * return an error
+     */
+    if (waitfor_thread->blocked_join != NULL)
+        return -1;
+
+    waitfor_thread->blocked_join = this_thread;
+
+    this_thread->state = BLOCKED;
+
+    // othewise loop until the process is terminated
+    while (waitfor_thread->state != DEAD)
+        ;
+
+    /* Target thread died, collect return value and return */
+    if (retval)
+        *retval = waitfor_thread->ret_val;
+
     return 0;
 }
