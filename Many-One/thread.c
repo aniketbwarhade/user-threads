@@ -49,11 +49,12 @@ static void start_routine(void)
     thread = get_cthread();
     thread->ret_val = thread->start_func(thread->args);
     thread->state = EXITED;
+
     setcontext(ucp);
 }
 
 /*
- *   Logic of scheduler code is referred from a git repo, link is pasted below:
+ *   Logic of scheduler code is referred from a code, link is pasted below:
  *   http://nitish712.blogspot.com/2012/10/thread-library-using-context-switching.html
  */
 
@@ -79,6 +80,7 @@ void scheduler()
             ucp->uc_flags = 0;
             ucp->uc_stack.ss_size = STACK_SIZE;
             ucp->uc_stack.ss_sp = allocate_stack(STACK_SIZE);
+            raise_pending_signals();
             getcontext(ucp);
             curr_thread->t_context->uc_link = ucp;
             swapcontext(ucp, curr_thread->t_context);
@@ -237,7 +239,7 @@ int join_thread(thread_t thread, void **retval)
 // Function to make a thread terminate itself , return value of the thread to be available to thread_join()
 void exit_thread(void *retval)
 {
-    strt_timer(&timer);
+    stp_timer(&timer);
     if (curr_thread->state == EXITED)
     {
         return;
@@ -252,6 +254,39 @@ void exit_thread(void *retval)
 
     curr_thread->state = EXITED;
     setcontext(ucp);
-    stp_timer(&timer);
+    strt_timer(&timer);
+    return;
+}
+
+int thread_kill(thread_t tid, int signum)
+{
+    if (signum < 0 || signum > 64)
+    {
+        return EINVAL;
+    }
+    if (curr_thread->thread_id == tid)
+    {
+        // printf("kill main thread");
+        raise(signum);
+        return 0;
+    }
+    tcb *temp = getthread_q(ready_queue, tid); // thread to signal
+    if (temp == NULL)                          // tid not found
+        return ESRCH;
+    sigaddset(&temp->sig_set, signum);
+    return 0;
+}
+
+void raise_pending_signals()
+{
+    // printf("raising signals\n");
+    for (int i = 1; i < NSIG; i++)
+    {
+        if (sigismember(&(curr_thread->sig_set), i))
+        {
+            raise(i);
+            sigdelset(&(curr_thread->sig_set), i);
+        }
+    }
     return;
 }

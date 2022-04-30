@@ -24,6 +24,7 @@ typedef struct tcb
     void *args;
     ucontext_t *t_context;
     struct tcb *blocked_join;
+    sigset_t sig_set;
 } tcb;
 
 typedef struct thread_attr_t
@@ -40,3 +41,5 @@ tcb *get_cthread(void);
 void strt_timer(struct itimerval *timer);
 void stp_timer(struct itimerval *timer);
 void exit_thread(void *retval);
+void raise_pending_signals();
+int thread_kill(thread_t tid, int signum);

@@ -40,8 +40,8 @@ int main()
     int *temp = &i;
     create_new_thread(&t1, NULL, &fn1, (void *)temp);
     join_thread(t1, (void **)&status1);
+    thread_kill(t1, SIGKILL);
     printf("status : %d\n", *status1);
-
     printf("succesfull");
 
     return 0;
