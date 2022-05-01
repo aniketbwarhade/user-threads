@@ -61,7 +61,6 @@ static void start_routine(void)
 // Whenever sigalrm is raised scheduler is called
 void scheduler()
 {
-    // printf("HII");
     stp_timer(&timer);
     int c = threads_count(ready_queue);
     void *prev_thread;
@@ -262,7 +261,7 @@ void exit_thread(void *retval)
  *   All Error checking is done before actually raising the signal to the specified thread
  *   and status is returned
  */
-int thread_kill(thread_t tid, int signum)
+int kill_thread(thread_t tid, int signum)
 {
     if (signum < 0 || signum > 64)
     {

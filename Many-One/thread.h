@@ -42,4 +42,4 @@ void strt_timer(struct itimerval *timer);
 void stp_timer(struct itimerval *timer);
 void exit_thread(void *retval);
 void raise_pending_signals();
-int thread_kill(thread_t tid, int signum);
+int kill_thread(thread_t tid, int signum);
