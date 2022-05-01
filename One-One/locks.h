@@ -1,27 +1,20 @@
+#include <stdio.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#include <stdatomic.h>
+#include <linux/futex.h>
+#include <errno.h>
 
-/*spinlock mutex structure*/
-typedef struct spinlock
-{
-    int islocked;
-} spinlock;
+typedef unsigned int spinlock;
+typedef unsigned int mutex;
 
-typedef struct mutex
-{
-    int islocked;
-    spinlock spin_lock;
-    int futex_word;
-} mutex;
+// synchronization using spinlocks
+int thread_spin_init(spinlock *lock);
+int thread_spin_lock(spinlock *lock);
+int thread_spin_unlock(spinlock *lock);
+int thread_spin_trylock(spinlock *lock);
 
-void thread_spin_init(spinlock *spin_lock);
-
-void thread_spin_lock(spinlock *spin_lock);
-
-void thread_spin_unlock(spinlock *spin_lock);
-
-void thread_mutex_init(mutex *m);
-
-void thread_mutex_block(mutex *m, spinlock *sl);
-
-void thread_mutex_lock(mutex *m);
-
-void thread_mutex_unlock(mutex *m);
+// synchronization using mutex
+int thread_mutex_init(mutex *mutex);
+int thread_mutex_lock(mutex *mutex);
+int thread_mutex_unlock(mutex *mutex);

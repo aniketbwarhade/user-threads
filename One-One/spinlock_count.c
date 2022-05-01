@@ -22,11 +22,11 @@ void *fun1(void *arg)
     {
 
         thread_spin_lock(&lock);
-        c1++;
         c++;
         thread_spin_unlock(&lock);
+        c1++;
     }
-    exit_thread(NULL);
+    return NULL;
 }
 
 void *fun2(void *arg)
@@ -34,11 +34,12 @@ void *fun2(void *arg)
     while (r)
     {
         thread_spin_lock(&lock);
+
         c++;
-        c2++;
         thread_spin_unlock(&lock);
+        c2++;
     }
-    exit_thread(NULL);
+    return NULL;
 }
 
 int main()
@@ -53,18 +54,19 @@ int main()
     r = 0;
     join_thread(t1, NULL);
     join_thread(t2, NULL);
-    printf(" Race Condition:-\n");
+    printf("\n---------------------------------------------------------------------------------------\n");
+    printf("Testcases to check synchronization using spinlock ( Race Condition ):-\n");
     printf(" c1 = %d\n", c1);
     printf(" c2 = %d\n", c2);
     printf(" c1 + c2 = %d\n", c1 + c2);
     printf(" c = %d\n", c);
     if (c == (c1 + c2))
     {
-        printf("\nPassed\n");
+        printf("\nTest Passed\n");
     }
     else
     {
-        printf("\nFailed\n");
+        printf("\nTest Failed\n");
     }
     return 0;
 }

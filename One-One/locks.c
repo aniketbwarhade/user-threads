@@ -8,89 +8,100 @@
 #include <unistd.h>
 #include "locks.h"
 
-// @credit:- xv6 code and os lecture
+// @credit:- xv6 code
 /*
  *   Logic of synchronization code is referred from a xv6 code, link is pasted below:
  *   https://github.com/mit-pdos/xv6-public
  */
 
-void thread_spin_init(spinlock *spin_lock)
+// function to initialize spin lock of thread
+int thread_spin_init(spinlock *lock)
 {
-    spin_lock->islocked = 0;
+    if (!lock)
+        return EINVAL;
+    *lock = 0;
 }
 
-void thread_mutex_init(mutex *m)
+// function to acquire the lock of spinlock atomically
+int thread_spin_lock(spinlock *lock)
 {
-    int i;
-    m->islocked = 0;
-    m->futex_word = 0;
-    thread_spin_init(&m->spin_lock);
-}
-
-int xchg(int *addr, int newval)
-{
-    int result;
-
-    // The + in "+m" denotes a read-modify-write operand.
-    asm volatile("lock; xchgl %0, %1"
-                 : "+m"(*addr), "=a"(result)
-                 : "1"(newval)
-                 : "cc");
-    return result;
-}
-
-void thread_spin_lock(spinlock *spin_lock)
-{
-    // The xchg is atomic.
-    while (xchg(&(spin_lock->islocked), 1) != 0)
+    if (!lock)
+        return EINVAL;
+    while (atomic_flag_test_and_set(lock))
         ;
-
-    // Tell the C compiler and the processor to not move loads or stores
-    // past this point, to ensure that all the stores in the critical
-    // section are visible to other cores before the lock is released.
-    // Both the C compiler and the hardware may re-order loads and
-    // stores; __sync_synchronize() tells them both not to.
-    __sync_synchronize();
+    return 0;
 }
 
-void thread_spin_unlock(spinlock *spin_lock)
+// function to release the lock of spinlock atomically
+int thread_spin_unlock(spinlock *lock)
 {
-    // Tell the C compiler and the processor to not move loads or stores
-    // past this point, to ensure that all the stores in the critical
-    // section are visible to other cores before the lock is released.
-    // Both the C compiler and the hardware may re-order loads and
-    // stores; __sync_synchronize() tells them both not to.
-    __sync_synchronize();
-
-    // Release the lock, equivalent to lk->locked = 0.
-    // This code can't use a C assignment, since it might
-    // not be atomic. A real OS would use C atomics here.
-    asm volatile("movl $0, %0"
-                 : "+m"(spin_lock->islocked)
-                 :);
+    if (!lock)
+        return EINVAL;
+    *lock = 0;
+    return 0;
 }
 
-void thread_mutex_block(mutex *m, spinlock *sl)
+// function to check if spinlock is available or not
+int thread_spin_trylock(spinlock *lock)
 {
-    thread_spin_unlock(sl);
-    syscall(SYS_futex, &(m->islocked), FUTEX_WAIT, 1, NULL, NULL, 0);
-    thread_spin_lock(sl);
+    if (!lock)
+        return EINVAL;
+    if (atomic_flag_test_and_set(lock))
+    {
+        return EBUSY;
+    }
+    return 0;
 }
 
-void thread_mutex_lock(mutex *m)
+// function to initialize mutex lock of thread
+int thread_mutex_init(mutex *mutex)
 {
-    thread_spin_lock(&m->spin_lock);
-    while (m->islocked)
-        thread_mutex_block(m, &m->spin_lock);
-    m->islocked = 1;
-    thread_spin_unlock(&m->spin_lock);
+    if (!mutex)
+        return EINVAL;
+    *mutex = 0;
+    return 0;
 }
 
-void thread_mutex_unlock(mutex *m)
+// function to acquire lock of mutex and sleeping
+// when the mutex is locked
+int thread_mutex_lock(mutex *mutex)
 {
-    int i, index;
-    thread_spin_lock(&m->spin_lock);
-    m->islocked = 0;
-    syscall(SYS_futex, &(m->islocked), FUTEX_WAKE, 1, NULL, NULL, 0);
-    thread_spin_unlock(&m->spin_lock);
+    if (!mutex)
+        return EINVAL;
+
+    int ret;
+    while (1)
+    {
+        const int is_locked = 0;
+        if (atomic_compare_exchange_strong(mutex, &is_locked, 1))
+        {
+            break;
+        }
+        ret = syscall(SYS_futex, mutex, FUTEX_WAIT, 0, NULL, NULL, 0);
+        if (ret == -1 && errno != EAGAIN)
+        {
+            perror("futex wait error");
+        }
+    }
+    return 0;
+}
+
+// function to release the lock of mutex and waking
+// up one process which is waiting to acquire the lock
+int thread_mutex_unlock(mutex *mutex)
+{
+    if (!mutex)
+        return EINVAL;
+
+    int ret;
+    const int is_unlocked = 1;
+    if (atomic_compare_exchange_strong(mutex, &is_unlocked, 0))
+    {
+        ret = syscall(SYS_futex, mutex, FUTEX_WAKE, 1, NULL, NULL, 0);
+        if (ret == -1)
+        {
+            perror("futex wake error");
+        }
+    }
+    return 0;
 }
