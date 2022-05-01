@@ -52,7 +52,7 @@ void thread_spin_lock(spinlock *spin_lock)
     // stores; __sync_synchronize() tells them both not to.
     __sync_synchronize();
 }
-// @credit:- xv6 code
+
 void thread_spin_unlock(spinlock *spin_lock)
 {
     // Tell the C compiler and the processor to not move loads or stores

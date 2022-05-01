@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <syscall.h>
-#include "doublyll.h"
+#include "queue.h"
 
 // Return thread_t of calling thread
 thread_t get_self_thread_id(void)

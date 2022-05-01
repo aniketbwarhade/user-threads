@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "./locks.h"
-#include "doublyll.h"
+#include "queue.h"
 spinlock lock;
 
 int c = 0;

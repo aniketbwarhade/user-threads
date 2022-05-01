@@ -2,15 +2,18 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <signal.h>
-#include "doublyll.h"
+#include "queue.h"
+
+int counter = 1;
 
 void *func_totestjoin(void *args)
 {
     int *temp = (int *)args;
 
-    printf("\nFunction Value: %d\n", *temp);
+    // printf("\nFunction Value: %d\n", *temp);
     return (void *)temp;
 }
+
 void *func_totestexit(void *args)
 {
     int i = 200;
@@ -19,6 +22,7 @@ void *func_totestexit(void *args)
     printf("noprint");
     return NULL;
 }
+
 void *func_totestkill(void *args)
 {
     int a = 3, b = 5;
@@ -27,45 +31,101 @@ void *func_totestkill(void *args)
     return NULL;
 }
 
+void *simple_func(void *args)
+{
+    return NULL;
+}
+
+void *killfun(void *arg)
+{
+    while (counter)
+        ;
+    return (void *)128;
+}
+
+void handler1(int sig)
+{
+    counter = 0;
+    return;
+}
+
+void handler2(int sig)
+{
+    counter++;
+    return;
+}
+
 int main()
 {
     init_thread_q();
     add_main_thread();
-    thread_t t1, t2, t3, pid;
+    thread_t t1, t2, t3, t4, t5, pid;
     int *status1 = NULL, *status2 = NULL, *status3 = NULL;
     int i = 11;
     int *temp = &i;
-    // create_new_thread(&t1, NULL, func_totestjoin, (void *)temp);
-    // create_new_thread(&t2, NULL, func_totestexit, NULL);
-    create_new_thread(&t3, NULL, func_totestjoin, (void *)temp);
-    // create_new_thread(&t2, NULL, func_totestexit, NULL);
-    // exit_thread(temp);
-    // printf("hii after exit_thread in main");
-    join_thread(t3, (void **)&status1);
-    printf("%d", *status1);
-    // join_thread(t2, (void **)&status2);
-    // join_thread(t3, (void **)&status3);
-    // kill_thread(t3, SIGKILL);
+
+    printf("ONE-ONE THREADING MODEL TESTING \n");
+
+    int check1 = create_new_thread(&t1, NULL, simple_func, (void *)temp);
+    // Value Return 0 by successfull creation of new thread, else return of error value.
+    printf("-----------------Test case for creation of successful thread-----------------\n");
+    if (check1 == 0)
+    {
+        printf("Test Passed\n");
+    }
+    else
+    {
+        printf("Test Failed\n");
+    }
+    printf("-----------------Test case for thread creation with null function -----------------\n");
+    int check2 = create_new_thread(&t2, NULL, NULL, (void *)temp);
+    // Value return 22 as this a invalid argument for the creation of new thread which represents the unsucessfull creation of new thread.
+    if (check2 == 22)
+    {
+        printf("Test Passed\n");
+    }
+    else
+    {
+        printf("Test Failed\n");
+    }
+    printf("----------------- Test case for creation  thread with invalid argument -----------------\n");
+    int check3 = create_new_thread(NULL, NULL, simple_func, (void *)temp);
+    // Value return 22 as this a invalid argument for the creation of new thread which represents the unsucessfull creation of new thread.
+    if (check3 == 22)
+    {
+        printf("Test Passed\n");
+    }
+    else
+    {
+        printf("Test Failed\n");
+    }
+    printf("-----------------Test case for Join_thread return value -----------------\n");
+
+    create_new_thread(&t4, NULL, func_totestjoin, (void *)temp);
+    join_thread(t4, (void **)&status2);
+    if (*status2 == *temp)
+    {
+        printf("Test Passed\n");
+    }
+    else
+    {
+        printf("Test Failed\n");
+    }
+
+    printf("-----------------Test case for kill_thread -----------------\n");
+    signal(SIGUSR1, handler1);
+    counter = 1;
+    create_new_thread(&t5, NULL, killfun, NULL);
+    kill_thread(t5, SIGUSR1);
+    join_thread(t5, (void **)&status3);
+    if (counter == 0)
+    {
+        printf("Test Passed\n");
+    }
+    else
+    {
+        printf("Test Failed\n");
+    }
+
     return 0;
 }
-
-/*
-    {code to test thread_join}
-    int *status1 = NULL, *status2 = NULL;
-    int i = 11;
-    int *temp = &i;
-    create_new_thread(&thread_id, NULL, &func_totestjoin, (void *)temp);
-    join_thread(thread_id, (void **)&status1);
-    printf("%d\n", *status1);
-*/
-
-/*
-    {code to test thread_exit}
-    create_new_thread(&thread_id, NULL, &func_totestexit, NULL);
-    create_new_thread(&pid, NULL, &func_totestexit, NULL);
-    join_thread(thread_id, (void **)&status1);
-    join_thread(pid, (void **)&status2);
-    printf("%d\n", *status1);
-    printf("%d\n", *status2);
-
-*/

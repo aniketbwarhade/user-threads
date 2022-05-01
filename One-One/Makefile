@@ -1,6 +1,9 @@
-all: threading_lib 
-threading_lib:  count.o locks.o thread.o queue.o
+all: threading_lib clean
+threading_lib:  count.o test.o locks.o thread.o queue.o
 	gcc  locks.o count.o thread.o queue.o -o threading_lib
+	./threading_lib
+	gcc  locks.o test.o thread.o queue.o -o testing
+	./testing
 
 test.o: test.c
 	gcc -c test.c
