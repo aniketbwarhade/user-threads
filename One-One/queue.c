@@ -1,16 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "doublyll.h"
+#include "queue.h"
 
-void init_thread_l()
+void init_thread_q()
 {
     thread_list = (queue *)malloc(sizeof(queue));
     thread_list->front = NULL;
     thread_list->rear = NULL;
-    thread_list->count = 0;
 }
 
-void addthread_l(tcb *thread)
+void addthread_q(tcb *thread)
 {
     node *t = (node *)malloc(sizeof(node));
     t->thread = thread;
@@ -27,11 +26,10 @@ void addthread_l(tcb *thread)
         thread_list->rear->next = t;
         thread_list->rear = t;
     }
-    thread_list->count++;
     return;
 }
 
-tcb *removethread_l()
+tcb *removethread_q()
 {
     if (is_empty())
     {
@@ -63,7 +61,7 @@ int is_empty()
     return (!thread_list->front && !thread_list->rear);
 }
 
-tcb *getthread_l(thread_t thread)
+tcb *getthread_q(thread_t thread)
 {
     node *t = (node *)malloc(sizeof(node));
     t = thread_list->front;

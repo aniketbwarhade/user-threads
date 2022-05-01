@@ -23,7 +23,7 @@ thread_t get_self_thread_id(void)
 int add_main_thread(void)
 {
     tcb *main;
-    atexit(free_thread_list); // removing thread_details from memory before exiting,
+    // atexit(free_thread_list); // removing thread_details from memory before exiting,
     main = (tcb *)malloc(sizeof(tcb));
     if (main == NULL)
     {
@@ -38,7 +38,7 @@ int add_main_thread(void)
     main->blocked_join = NULL;
     main->thread_id = get_self_thread_id();
 
-    addthread_l(main);
+    addthread_q(main);
     return 0;
 }
 
@@ -104,7 +104,7 @@ int create_new_thread(thread_t *t, thread_attr_t *attr, void *(*start_func)(void
     }
     child_thread->thread_id = thread_id;
     // Add created thread_struct to queue of thread blocks
-    addthread_l(child_thread);
+    addthread_q(child_thread);
 
     (*t) = thread_id;
     return 0;
@@ -115,12 +115,13 @@ int join_thread(thread_t thread, void **retval)
 {
     thread_t t;
     tcb *calling_thread, *called_thread;
-    called_thread = getthread_l(thread);
-    calling_thread = getthread_l(get_self_thread_id());
+    called_thread = getthread_q(thread);
+    calling_thread = getthread_q(get_self_thread_id());
     // If the thread is already dead, no need to wait. Just collect the return value and exit
     if (called_thread->state == DEAD)
     {
-        *retval = called_thread->return_val;
+        if (retval)
+            *retval = called_thread->return_val;
         return 0;
     }
 
@@ -152,23 +153,7 @@ void exit_thread(void *ret_val)
 {
     tcb *curr_thread;
     thread_t thread_id = get_self_thread_id();
-    curr_thread = getthread_l(thread_id);
-    thread_t main_thread_id = getpid();
-    if (main_thread_id == thread_id)
-    {
-        node *temp;
-        temp = thread_list->front;
-        while (temp != NULL)
-        {
-            if (temp->thread->thread_id != main_thread_id)
-            {
-                int c_tid = temp->thread->thread_id;
-                join_thread(c_tid, NULL);
-            }
-            temp = temp->next;
-        }
-    }
-
+    curr_thread = getthread_q(thread_id);
     curr_thread->return_val = ret_val;
     if (curr_thread->blocked_join != NULL)
         curr_thread->blocked_join->state = READY;
@@ -191,9 +176,9 @@ int kill_thread(thread_t thread, int signal)
     int thread_id, ret_val;
     tcb *target_thread;
     int pid = get_self_thread_id();
-    target_thread = getthread_l(thread);
+    target_thread = getthread_q(thread);
     thread_id = (unsigned long)target_thread->thread_id;
-    ret_val = tgkill(pid, thread_id, signal);
+    ret_val = kill(thread_id, signal);
     // printf("kill returns: %d\n", ret_val);
     return ret_val;
 }
@@ -205,7 +190,7 @@ void free_thread_list()
     // free individual threads
     while (thread_list->front != NULL)
     {
-        t = removethread_l();
+        t = removethread_q();
         free(t->stack);
         free(t);
     }

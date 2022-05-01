@@ -14,8 +14,8 @@ typedef struct queue
 
 queue *thread_list; // Global pointer pointing to thread queue
 
-void init_thread_l(void);
-void addthread_l(tcb *thread);
-tcb *removethread_l();
+void init_thread_q(void);
+void addthread_q(tcb *thread);
+tcb *removethread_q();
 int is_empty();
-tcb *getthread_l(thread_t thread); // Get tcb_structure from thread_t
+tcb *getthread_q(thread_t thread); // Get tcb_structure from thread_t

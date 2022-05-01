@@ -258,6 +258,10 @@ void exit_thread(void *retval)
     return;
 }
 
+/*
+ *   All Error checking is done before actually raising the signal to the specified thread
+ *   and status is returned
+ */
 int thread_kill(thread_t tid, int signum)
 {
     if (signum < 0 || signum > 64)

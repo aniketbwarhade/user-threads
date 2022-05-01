@@ -29,7 +29,7 @@ void *func_totestkill(void *args)
 
 int main()
 {
-    init_thread_l();
+    init_thread_q();
     add_main_thread();
     thread_t t1, t2, t3, pid;
     int *status1 = NULL, *status2 = NULL, *status3 = NULL;
