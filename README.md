@@ -1,7 +1,8 @@
-# OS-Multithreading
-Implementing multi-threading library
+# Multithreading-Library
+Implementation of User-Level multithreading library for Unix-like POSIX compliant systems .
 
-This include two libraries using:
+
+This include two Mappings:
 1. One-one model
 2. Many-one model
 
@@ -12,6 +13,8 @@ FIFO scheduling of threads.
 
 1.One-One Model:
 ---------------
+### Each user thread get mapped to its corresponding kernel thread.
+
 Following eight functions are implemented:
 1. thread_create() : Clone is used.
 2. thread_join()
@@ -34,19 +37,14 @@ To Run One-one model:
 
 Test Files:
 -----------
-All test-files are included in test-files/one-one/ along with the screenshots of the output.
-Output of one-one/test.c is shown in screenshot test-files/one-one/test.png.
+test.c : Calculates sum of consecutive numbers from 1 to the number in command line arg 1 with arg 2 no of threads, along with implementation of lock and SIGSTOP, SIGCONT signals.
 
-Description of test files:
-1. test.c : Calculates sum of consecutive numbers from 1 to the number in command line arg 1 with arg 2 no of threads, along with implementation of lock and SIGSTOP, SIGCONT signals.
-2. test1.c : Displays effect of unlocking resources by a thread on other threads.
-3. test2.c : Matrix multiplication.
-4. test3.c : Sigterm implementation along with unlocking a thread resource.
-5. test4.c : Sigkill
 
 
 2.Many-One Model:
 ---------------
+### There is a mapping for many user level threads onto a single kernel thread.
+### SIGVTALRM signals are used to do the scheduling of user threads .
 Following eight functions are implemented:
 1. thread_create()
 2. thread_join()
@@ -69,12 +67,6 @@ To Run Many-one model:
 
 Test Files:
 -----------
-All test-files are included in test-files/many-one/ along with the screenshots of the output.
-Output of many-one/test.c is shown in screenshot test-files/many-one/test.png.
 
-Description of test files:
-1. test.c : Joining 2 threads and Sigkill one of them.
-2. test1.c : Calculates sum of consecutive numbers from 1 to the number in command line arg 1 with arg 2 no of threads, along with implementation of lock.
-3. test2.c : Displays effect of unlocking resources by a thread on other threads.
-4. test3.c : Sighup signal
-5. test4.c : Sigstop signal
+test.c : Joining 2 threads and Sigkill one of them.
+
