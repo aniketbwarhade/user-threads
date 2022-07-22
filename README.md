@@ -31,13 +31,13 @@ To Run One-one model:
 ---------------------
 1. Go to "one-one" folder.
 2. Create test.c file and write your code in it.
-3. Include "../thread.h" in your test.c file.
+3. Include "./thread.h" in your test.c file.
 4. Run command "make".
 5. Run "./test".
 
 Test Files:
 -----------
-test.c : Calculates sum of consecutive numbers from 1 to the number in command line arg 1 with arg 2 no of threads, along with implementation of lock and SIGSTOP, SIGCONT signals.
+test.c : Testing file which test the all implemented functionality of One-one model.
 
 
 
@@ -61,12 +61,12 @@ To Run Many-one model:
 ----------------------
 1. Go to "many-one" folder.
 2. Create test.c file and write your code in it.
-3. Include "../thread.h" in your test.c file.
+3. Include "./thread.h" in your test.c file.
 4. Run command "make".
 5. Run "./test".
 
 Test Files:
 -----------
 
-test.c : Joining 2 threads and Sigkill one of them.
+test.c : Testing file which test the all implemented functionality of Many-one model.
 
