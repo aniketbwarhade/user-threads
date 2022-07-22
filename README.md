@@ -51,7 +51,7 @@ test.c : Testing file which test the all implemented functionality of One-one mo
 ---------------
 ### There is a mapping for many user level threads onto a single kernel thread.
 ### SIGVTALRM signals are used to do the scheduling of user threads .
-Following eight functions are implemented:
+Following twelve functions are implemented:
 1. create_new_thread() 
 2. join_thread()
 3. exit_thread()
