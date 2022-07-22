@@ -15,15 +15,21 @@ FIFO scheduling of threads.
 ---------------
 ### Each user thread get mapped to its corresponding kernel thread.
 
-Following eight functions are implemented:
-1. thread_create() : Clone is used.
-2. thread_join()
-3. thread_exit()
-4. thread_kill() : All signals are handled as in pthread_kill.
-5. thread_lock_init() : For initialization of lock.
-6. thread_lock()
-7. thread_unlock()
-8. thread_self(): Will return the thread-id of calling thread.
+Following twelve functions are implemented:
+1. create_new_thread() : Clone is used.
+2. join_thread()
+3. exit_thread()
+4. kill_thread() : All signals are handled as in pthread_kill.
+5. get_self_thread_id(): Will return the thread-id of calling thread.
+6. thread_spin_init();   synchronization using spinlocks
+7. thread_spin_lock();
+8. thread_spin_unlock();
+9. thread_spin_trylock();
+// synchronization using mutex
+10. thread_mutex_init();
+11. thread_mutex_lock();
+12. thread_mutex_unlock();
+
 
 The prototype of this functions is included in thread.h file.
 
@@ -46,14 +52,19 @@ test.c : Testing file which test the all implemented functionality of One-one mo
 ### There is a mapping for many user level threads onto a single kernel thread.
 ### SIGVTALRM signals are used to do the scheduling of user threads .
 Following eight functions are implemented:
-1. thread_create()
-2. thread_join()
-3. thread_exit()
-4. thread_kill() : Signals SIGSTOP, SIGCONT, SIGTERM, SIGHUP, SIGINT and SIGKILL are handled.
-5. thread_lock_init() : For initialization of lock.
-6. thread_lock()
-7. thread_unlock()
-8. thread_self(): Will return the thread-id of calling thread.
+1. create_new_thread() 
+2. join_thread()
+3. exit_thread()
+4. kill_thread() : Signals SIGSTOP, SIGCONT, SIGTERM, SIGHUP, SIGINT and SIGKILL are handled.
+5. get_self_thread_id(): Will return the thread-id of calling thread.
+6. thread_spin_init();   synchronization using spinlock
+7. thread_spin_lock();
+8. thread_spin_unlock();
+9. thread_spin_trylock();
+// synchronization using mutex
+10. thread_mutex_init();
+11. thread_mutex_lock();
+12. thread_mutex_unlock();
 
 The prototype of this functions is included in thread.h file.
 
