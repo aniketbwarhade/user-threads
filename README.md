@@ -2,7 +2,7 @@
 Implementation of User-Level multithreading library for Unix-like POSIX compliant systems .
 
 
-This include two Mappings:
+This include two Mappings models:
 1. One-one model
 2. Many-one model
 
